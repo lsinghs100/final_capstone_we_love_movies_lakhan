@@ -1,31 +1,63 @@
 const service = require("./reviews.service");
 const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
+const methodNotAllowed = require("../errors/methodNotAllowed");
 
-async function reviewIsValid(req, res, next) {
-  const { reviewId } = req.params;
-  const matchingReview = await service.read(reviewId);
-  if (matchingReview) {
-    res.locals.review = matchingReview;
+async function reviewExists(request, response, next) {
+  const review = await service.list(request.params.reviewId);
+  if (review) {
+     response.locals.review = review
+     next()
+  } else {
+    next({
+      status: 404,
+      message: `Review cannot be found ${request.params.reviewId}`
+    })
+  }
+}
+
+async function destroy(request, response) {
+  await service.destroy(request.params.reviewId)
+  response.sendStatus(204)
+}
+
+async function list(request, response) {
+  response.status(200).json({ data: await service.list(request.params.reviewId) });
+}
+
+function hasMovieIdInPath(request, response, next) {
+  if (request.params.movieId) {
     return next();
   }
-  return next({ status: 404, message: "Review cannot be found." });
+  methodNotAllowed(request, response, next);
 }
 
-async function destroy(req, res) {
-  await service.destroy(res.locals.review.review_id);
-  res.sendStatus(204);
+function noMovieIdInPath(request, response, next) {
+  if (request.params.movieId) {
+    return methodNotAllowed(request, response, next);
+  }
+  next();
 }
 
-async function update(req, res) {
-  const updatedReview = { ...res.locals.review, ...req.body.data };
-  await service.update(updatedReview);
-  const reviewToReturn = await service.getReviewWithCritic(
-    res.locals.review.review_id
-  );
-  res.json({ data: reviewToReturn });
+async function update(request, response) {
+  const updatedReview = {
+    ...response.locals.review,
+    ...request.body.data,
+    review_id: response.locals.review.review_id,
+  };
+  const updatedReviewInDB = await service.update(updatedReview)
+  response.status(200).json({ data: updatedReviewInDB })
 }
 
 module.exports = {
-  delete: [asyncErrorBoundary(reviewIsValid), asyncErrorBoundary(destroy)],
-  update: [asyncErrorBoundary(reviewIsValid), asyncErrorBoundary(update)],
-}; 
+  destroy: [
+    noMovieIdInPath,
+    asyncErrorBoundary(reviewExists),
+    asyncErrorBoundary(destroy),
+  ],
+  list: [hasMovieIdInPath, asyncErrorBoundary(list)],
+  update: [
+    noMovieIdInPath,
+    asyncErrorBoundary(reviewExists),
+    asyncErrorBoundary(update),
+  ],
+};
