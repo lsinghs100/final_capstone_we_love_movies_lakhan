@@ -1,5 +1,4 @@
-## Theaters
-
+/*
 The `theaters` table represents movie theaters. Each theater has the following fields:
 
 - `theater_id`: (Primary Key) A unique ID for the theater.
@@ -25,4 +24,21 @@ An example record looks like the following:
   "updated_at": "2021-02-23T20:48:13.315Z"
 }
 ```
-To create the `created_at` and `updated_at` fields you can use the timestamps method in your migration file (e.g. `table.timestamps(true, true);`). You can read more about timestamps [here](https://knexjs.org/#Schema-timestamps).
+*/
+
+exports.up = function(knex) {
+    return knex.schema.createTable("theaters", (table) => {
+          table.increments("theater_id").primary();
+          table.string("name");
+          table.string("address_line_1");
+          table.string("address_line_2");
+          table.string("city");
+          table.string("state");
+          table.string("zip");
+          table.timestamps(true, true);
+      })
+  };
+  
+  exports.down = function(knex) {
+    return knex.schema.dropTable("theaters");
+  };

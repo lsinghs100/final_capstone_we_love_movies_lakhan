@@ -20,22 +20,3 @@ An example record looks like the following:
 }
 ```
 To create the `created_at` and `updated_at` fields you can use the timestamps method in your migration file (e.g. `table.timestamps(true, true);`). You can read more about timestamps [here](https://knexjs.org/#Schema-timestamps).
-
-*Hint:* If you are having trouble creating the `exports.up` and `exports.down` functions, try the following code to create the table:
-
-```js
-exports.up = function (knex) {
-  return knex.schema.createTable("critics", (table) => {
-    table.increments("critic_id");
-    table.string("preferred_name");
-    table.string("surname");
-    table.string("organization_name");
-    table.timestamps(true, true);
-  });
-};
-
-exports.down = function (knex) {
-  return knex.schema.dropTable("critics");
-};
-
-```
